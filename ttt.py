@@ -2,6 +2,7 @@
 
 import numpy as np
 import sys
+import random
 
 class TicTacToe:
 
@@ -14,7 +15,7 @@ class TicTacToe:
         return [row, col]
 
     def edit_board(self, n, s):
-        if s not in [1, -1]:
+        if s not in [1, 4]:
             return -1
         rc = self.get_rowcol(n)
         self.board[rc[0]][rc[1]] = s
@@ -26,10 +27,10 @@ class TicTacToe:
             count += 1
             if i==0:
                 s+=' - '
-            elif i<0:
-                s+=' o '
-            elif i>0:
+            elif i==1:
                 s+=' x '
+            elif i==4:
+                s+=' o '
             if count%3==0:
                 s+=('\n')
 
@@ -40,10 +41,13 @@ class TicTacToe:
         trace = np.sum(np.diag(a))
         antitrace = np.sum(np.diag(np.flipud(a)))
         all_sums = np.concatenate((np.sum(a, 0),np.sum(a, 1), [trace], [antitrace]))
+        print "Product is: "+str(np.prod(a))
         if 3 in all_sums:
             return 1
-        elif -3 in all_sums:
+        elif 12 in all_sums:
             return -1
+        elif np.prod(a)!=0:
+            return -2
         else:
             return 0
 
@@ -69,6 +73,8 @@ class TicTacToe:
 
     def play(self):
 
+        ai = tAtIt(self.board)
+
         print "Welcome to tic-tac-toe. To play, enter a number for a position.\n"
         print "The array used has the folowing indexing:\n"
         print " 1  2  3 \n 4  5  6 \n 7  8  9\n"
@@ -77,27 +83,93 @@ class TicTacToe:
         self.draw_board()
         game_not_over = True
         while game_not_over:
+            '''
             x = self.step("x")
+            '''
+            o = self.step("o")
+            self.edit_board(o, 4)
+            w = self.check_wins()
+            self.draw_board()
+
+            if np.abs(w) > 0:
+                game_not_over = False
+                break
+
+            print "Turn for x: \n"
+            ai.update_board(self.board)
+            x = ai.move()
             self.edit_board(x, 1)
             w = self.check_wins()
             self.draw_board()
 
-            if np.abs(w) == 1:
+            if np.abs(w) > 0:
                 game_not_over = False
                 break
 
-            o = self.step("o")
-            self.edit_board(o, -1)
-            w = self.check_wins()
-            self.draw_board()
+        if w == -2:
+            print "Game over, draw."
 
-            if np.abs(w) == 1:
-                game_not_over = False
-                break
-
-        if w == 1:
-            s = 'x'
         else:
-            s = 'o'
+            if w == 1:
+                s = 'x'
+            elif w==-1:
+                s = 'o'
+            print "Game over. The winner is " + s
 
-        print "Game over. The winner is " + s
+
+class tAtIt:
+    def __init__(self, board):
+        self.board = board
+
+    def compute_entry(self, r,c):
+        return (r*3)+c
+
+    def update_board(self, board):
+        self.board = board
+
+    def move(self):
+        rsum = np.sum(self.board, 0)
+        csum = np.sum(self.board, 1)
+        diag = np.diag(self.board)
+        adiag = np.diag(np.flipud(self.board))
+        tsum = np.sum(diag)
+        asum = np.sum(adiag)
+
+        all = [rsum, csum, asum, tsum]
+
+        # Blocking case
+        if 8 in rsum:
+            cx = np.where(rsum==8)[0]
+            rx = np.where(self.board[:,cx].flatten()==0)[0]
+            e = self.compute_entry(rx, cx)
+            print self.board[:,cx].flatten()
+            print "R Computing row: "+str(rx)+" col: "+str(cx)+" out:"+str(e)
+
+        elif 8 in csum:
+            rx = np.where(csum==8)[0]
+            cx = np.where(self.board[rx,:].flatten()==0)[0]
+            e = self.compute_entry(rx, cx)
+            print self.board[rx,:].flatten()
+            print "C Computing row: "+str(rx)+" col: "+str(cx)+" out:"+str(e)
+
+        elif tsum==8:
+            dx = np.where(diag==0)[0]
+            e = self.compute_entry(dx, dx)
+
+        elif asum==8:
+            dx = np.where(adiag==0)[0]
+            if dx == 0:
+                e = self.compute_entry(2,0)
+            elif dx==1:
+                e = self.compute_entry(1,1)
+            elif dx==2:
+                e = self.compute_entry(0,2)
+
+        else:
+            while True:
+                ix = [random.randint(0,2), random.randint(0,2)]
+                if self.board[ix[0]][ix[1]] == 0:
+                    break
+            e = self.compute_entry(ix[0], ix[1])
+
+        return int(e)
