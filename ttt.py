@@ -127,7 +127,8 @@ class tAtIt:
     def update_board(self, board):
         self.board = board
 
-    def move(self):
+    def check_move(self, val):
+
         rsum = np.sum(self.board, 0)
         csum = np.sum(self.board, 1)
         diag = np.diag(self.board)
@@ -135,28 +136,27 @@ class tAtIt:
         tsum = np.sum(diag)
         asum = np.sum(adiag)
 
-        all = [rsum, csum, asum, tsum]
+        e = 0
 
-        # Blocking case
-        if 8 in rsum:
-            cx = np.where(rsum==8)[0]
+        if val in rsum:
+            cx = np.where(rsum==val)[0]
             rx = np.where(self.board[:,cx].flatten()==0)[0]
             e = self.compute_entry(rx, cx)
             print self.board[:,cx].flatten()
             print "R Computing row: "+str(rx)+" col: "+str(cx)+" out:"+str(e)
 
         elif 8 in csum:
-            rx = np.where(csum==8)[0]
+            rx = np.where(csum==val)[0]
             cx = np.where(self.board[rx,:].flatten()==0)[0]
             e = self.compute_entry(rx, cx)
             print self.board[rx,:].flatten()
             print "C Computing row: "+str(rx)+" col: "+str(cx)+" out:"+str(e)
 
-        elif tsum==8:
+        elif tsum==val:
             dx = np.where(diag==0)[0]
             e = self.compute_entry(dx, dx)
 
-        elif asum==8:
+        elif asum==val:
             dx = np.where(adiag==0)[0]
             if dx == 0:
                 e = self.compute_entry(2,0)
@@ -165,7 +165,19 @@ class tAtIt:
             elif dx==2:
                 e = self.compute_entry(0,2)
 
-        else:
+        return e
+
+
+    def move(self):
+        # Check for possible next-move wins
+        e = self.check_move(2)
+
+        # Check for possible next-move wins
+        if e == 0:
+            e = self.check_move(8)
+
+        # Randomly select for next move
+        if e == 0:
             while True:
                 ix = [random.randint(0,2), random.randint(0,2)]
                 if self.board[ix[0]][ix[1]] == 0:
