@@ -41,7 +41,6 @@ class TicTacToe:
         trace = np.sum(np.diag(a))
         antitrace = np.sum(np.diag(np.flipud(a)))
         all_sums = np.concatenate((np.sum(a, 0),np.sum(a, 1), [trace], [antitrace]))
-        print "Product is: "+str(np.prod(a))
         if 3 in all_sums:
             return 1
         elif 12 in all_sums:
@@ -83,9 +82,6 @@ class TicTacToe:
         self.draw_board()
         game_not_over = True
         while game_not_over:
-            '''
-            x = self.step("x")
-            '''
             o = self.step("o")
             self.edit_board(o, 4)
             w = self.check_wins()
@@ -95,7 +91,7 @@ class TicTacToe:
                 game_not_over = False
                 break
 
-            print "Turn for x: \n"
+            print "Turn for AI x: \n"
             ai.update_board(self.board)
             x = ai.move()
             self.edit_board(x, 1)
@@ -142,15 +138,11 @@ class tAtIt:
             cx = np.where(rsum==val)[0]
             rx = np.where(self.board[:,cx].flatten()==0)[0]
             e = self.compute_entry(rx, cx)
-            print self.board[:,cx].flatten()
-            print "R Computing row: "+str(rx)+" col: "+str(cx)+" out:"+str(e)
 
         elif 8 in csum:
             rx = np.where(csum==val)[0]
             cx = np.where(self.board[rx,:].flatten()==0)[0]
             e = self.compute_entry(rx, cx)
-            print self.board[rx,:].flatten()
-            print "C Computing row: "+str(rx)+" col: "+str(cx)+" out:"+str(e)
 
         elif tsum==val:
             dx = np.where(diag==0)[0]
