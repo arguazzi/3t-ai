@@ -9,17 +9,19 @@ class TicTacToe:
     def __init__(self, board_size=3, win_len=3):
         self.board_size = board_size
         self.board = np.zeros((board_size, board_size))
+        self.available_positions = [i for i in range(0, board_size * board_size)]  # list of available empty places
+
         self.win_len = win_len
         self.naughts = win_len + 1  # representation of the naughts
         self.crosses = 1  # representation of the crosses
         self.blanks = 0  # representation of the empty states
         self.boardHash = None  # unique hash representation
-        self.available_positions = [i for i in range(0, board_size * board_size)]  # list of available empty places
         self.aio = None  # naughts player, plays first
         self.aix = None  # crosses player, plays second
 
     def reset_board(self):
         self.board = np.zeros((self.board_size, self.board_size))
+        self.available_positions = [i for i in range(0, self.board_size * self.board_size)]  # list of available empty places
 
     def get_rowcol(self, n):
         row = n // self.board_size
@@ -243,12 +245,9 @@ class RLttt:
                 next_board[p] = self.pval
                 next_boardHash = self.get_hash(next_board)
                 if self.states_value.get(next_boardHash) is None:
-                    print("Is none")
                     value = 0
                 else:
                     value = self.states_value.get(next_boardHash)
-                    print(value)
-
                 if value >= value_max:
                     value_max = value
                     action = p
@@ -346,7 +345,7 @@ class tAtIt:
         # Randomly select for next move
         if e == 0:
             idx = np.random.choice(len(positions))
-        e = positions[idx]
+            e = positions[idx]
 
         return e
 
