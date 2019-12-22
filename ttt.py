@@ -93,6 +93,10 @@ class TicTacToe:
         if gui_on:
             print(text)
 
+    def train(self, aio, aix, turns):
+        for i in range(turns):
+            self.play(aio, aix, gui_on=False)
+
     def play(self, aio, aix, gui_on=True):
 
         self.reset_board()
@@ -141,14 +145,14 @@ class TicTacToe:
                 break
 
         if w == -2:
-            self.printer("Game over, draw.", gui_on)
+            self.printer("Game over, draw."+"\n", gui_on)
             self.give_reward(w)
         else:
             if w == 1:
                 s = 'x'
             elif w == -1:
                 s = 'o'
-            self.printer("Game over. The winner is " + s, gui_on)
+            self.printer("Game over. The winner is " + s+"\n", gui_on)
             self.give_reward(w)
 
     def give_reward(self, w):
@@ -177,7 +181,7 @@ class Human:
             if action in positions:
                 return action
             else:
-                print("Move not available.")
+                print("Move not available.\n")
 
     def feed_reward(self, reward):
         pass
@@ -191,7 +195,7 @@ class Human:
 
 class RLttt:
 
-    def __init__(self, exp_rate=0.3, learning_rate=0.2, decay_gamma=0.9):
+    def __init__(self, policy_file=None, toggle_train=False, exp_rate=0.3, learning_rate=0.2, decay_gamma=0.9):
         self.player = None
         self.pval = None
         self.oval = None
@@ -200,6 +204,10 @@ class RLttt:
         self.lr = learning_rate
         self.decay_gamma = decay_gamma
         self.states_value = {}
+        self.toggle_train = toggle_train
+
+        if policy_file is not None:
+            self.load_policy(policy_file)
 
     def set_player(self, player, pval, oval, win_len):
         self.player = player
@@ -213,7 +221,6 @@ class RLttt:
     def reset_state(self):
         self.states = []
 
-    @staticmethod
     def get_hash(self, board):
         boardHash = str(board.flatten())
         return boardHash
@@ -230,15 +237,18 @@ class RLttt:
             idx = np.random.choice(len(positions))
             action = positions[idx]
         else:
-            value_max = -999
+            value_max = -np.inf
             for p in positions:
                 next_board = board.copy().flatten()
                 next_board[p] = self.pval
                 next_boardHash = self.get_hash(next_board)
                 if self.states_value.get(next_boardHash) is None:
+                    print("Is none")
                     value = 0
                 else:
                     value = self.states_value.get(next_boardHash)
+                    print(value)
+
                 if value >= value_max:
                     value_max = value
                     action = p
@@ -250,6 +260,8 @@ class RLttt:
                 self.states_value[st] = 0
                 self.states_value[st] += self.lr * (self.decay_gamma * reward - self.states_value[st])
                 reward = self.states_value[st]
+        if self.toggle_train:
+            self.save_policy()
 
     def save_policy(self):
         name = 'policy_' + str(self.player)
@@ -258,9 +270,12 @@ class RLttt:
         fw.close()
 
     def load_policy(self, filename):
-        fr = open(filename, 'rb')
-        self.states_value = pickle.load(fr)
-        fr.close()
+        try:
+            fr = open(filename, 'rb')
+            self.states_value = pickle.load(fr)
+            fr.close()
+        except IOError:
+            print("File not available. Starting from the beginning.")
 
 
 class tAtIt:
@@ -345,8 +360,101 @@ class tAtIt:
         pass
 
 
+class Game:
+
+    def __init__(self):
+        self.debut_str = "If you want to: " \
+                    "\n-train the RL-AI [1], " \
+                    "\n-play RL-AI vs Markov-AI [2], " \
+                    "\n-play RL-AI vs RL-AI [3], " \
+                    "\n-play RL-AI vs Human [4], " \
+                    "\n-play Human vs Human [5], " \
+                    "\n-exit [0]\n"
+        self.debut_possibilities = [1, 2, 3, 4, 5, 0]
+        self.max_training = 100000
+
+    def intro(self):
+        while True:
+            debut_choice = int(input(self.debut_str))
+            if debut_choice in self.debut_possibilities:
+                return debut_choice
+            else:
+                print("Move not available.\n")
+
+    def training_len(self):
+        text = 'How many turns should it train for?\n'
+        choice = int(input(text))
+        if (choice>0) and (choice<self.max_training):
+            return choice
+        else:
+            print("Please enter a positive number up to "+str(self.max_training)+"\n")
+
+    def rl_ai_position(self):
+        text = 'RL-AI as player 1 [1] or 2 [2]?\n'
+        choice = int(input(text))
+        if (choice == 1) or (choice == 2):
+            return choice
+        else:
+            print("Please input a number 1 or 2\n")
+
+    def end_game(self):
+        text = 'The game is over. Exit [1] or go back to main menu [2].\n'
+        choice = int(input(text))
+        if (choice == 1) or (choice == 2):
+            return choice
+        else:
+            print("Please input a number 1 or 2")
+
+    def run(self):
+        while True:
+            aio = None
+            aix = None
+            choice = self.intro()
+            if choice == 1:
+                train_len = self.training_len()
+                tictactoe = TicTacToe(board_size=3, win_len=3)
+                aio = RLttt(policy_file="policy_o", toggle_train=True)
+                aix = RLttt(policy_file="policy_x", toggle_train=True)
+                tictactoe.train(aio=aio, aix=aix, turns=train_len)
+            elif choice == 2:
+                rl_ai_pos = self.rl_ai_position()
+                if rl_ai_pos == 1:
+                    aio = RLttt(policy_file="policy_o", toggle_train=True)
+                    aix = tAtIt()
+                elif rl_ai_pos == 2:
+                    aio = tAtIt()
+                    aix = RLttt(policy_file="policy_x", toggle_train=True)
+                tictactoe = TicTacToe(board_size=3, win_len=3)
+                tictactoe.play(aio=aio, aix=aix, gui_on=True)
+            elif choice == 3:
+                tictactoe = TicTacToe(board_size=3, win_len=3)
+                aio = RLttt(policy_file="policy_o", toggle_train=True)
+                aix = RLttt(policy_file="policy_x", toggle_train=True)
+                tictactoe.play(aio=aio, aix=aix, gui_on=True)
+            elif choice == 4:
+                rl_ai_pos = self.rl_ai_position()
+                if rl_ai_pos == 1:
+                    aio = RLttt(policy_file="policy_o", toggle_train=True)
+                    aix = Human()
+                elif rl_ai_pos == 2:
+                    aio = Human()
+                    aix = RLttt(policy_file="policy_x", toggle_train=True)
+                tictactoe = TicTacToe(board_size=3, win_len=3)
+                tictactoe.play(aio=aio, aix=aix, gui_on=True)
+            elif choice == 5:
+                tictactoe = TicTacToe(board_size=3, win_len=3)
+                aio = Human()
+                aix = Human()
+                tictactoe.play(aio=aio, aix=aix, gui_on=True)
+            elif choice == 6:
+                break
+
+            choice = self.end_game()
+            if choice == 1:
+                break
+
+
 if __name__ == '__main__':
-    tictactoe = TicTacToe(board_size=3, win_len=3)
-    aix = tAtIt()
-    aio = tAtIt()
-    tictactoe.play(aio=aio, aix=aix, gui_on=False)
+    game = Game()
+    game.run()
+    print('OK. Bye then!')
