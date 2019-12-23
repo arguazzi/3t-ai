@@ -199,7 +199,7 @@ class Human:
 
 class RLttt:
 
-    def __init__(self, policy_file=None, toggle_train=False, exp_rate=0.3, learning_rate=0.2, decay_gamma=0.9):
+    def __init__(self, policy_file=None, train_prefix=None, exp_rate=0.3, learning_rate=0.2, decay_gamma=0.9):
         self.player = None
         self.pval = None
         self.oval = None
@@ -208,7 +208,7 @@ class RLttt:
         self.lr = learning_rate
         self.decay_gamma = decay_gamma
         self.states_value = {}
-        self.toggle_train = toggle_train
+        self.train_prefix = train_prefix
 
         if policy_file is not None:
             self.load_policy(policy_file)
@@ -261,11 +261,12 @@ class RLttt:
                 self.states_value[st] = 0
                 self.states_value[st] += self.lr * (self.decay_gamma * reward - self.states_value[st])
                 reward = self.states_value[st]
-        if self.toggle_train:
-            self.save_policy()
+        if self.train_prefix is not None:
+            self.save_policy(self.train_prefix)
+        self.reset_state()
 
-    def save_policy(self):
-        name = 'policy_' + str(self.player)
+    def save_policy(self, prefix):
+        name = 'policy_' + prefix + '_' + str(self.player)
         fw = open(name, 'wb')
         pickle.dump(self.states_value, fw)
         fw.close()
@@ -443,35 +444,35 @@ class Game:
             if choice == 1:
                 train_len = self.training_len()
                 tictactoe = TicTacToe(board_size=3, win_len=3)
-                aio = RLttt(policy_file="policy_o", toggle_train=True)
-                aix = RLttt(policy_file="policy_x", toggle_train=True)
+                aio = RLttt(policy_file="policy_o", train_prefix='vanilla')
+                aix = RLttt(policy_file="policy_x", train_prefix='vanilla')
                 tictactoe.train(aio=aio, aix=aix, turns=train_len)
 
             elif choice == 2:
                 rl_ai_pos = self.rl_ai_position()
                 if rl_ai_pos == 1:
-                    aio = RLttt(policy_file="policy_o", toggle_train=True)
+                    aio = RLttt(policy_file="policy_o", train_prefix='vanilla')
                     aix = tAtIt()
                 elif rl_ai_pos == 2:
                     aio = tAtIt()
-                    aix = RLttt(policy_file="policy_x", toggle_train=True)
+                    aix = RLttt(policy_file="policy_x", train_prefix='vanilla')
                 tictactoe = TicTacToe(board_size=3, win_len=3)
                 _ = tictactoe.play(aio=aio, aix=aix, gui_on=True)
 
             elif choice == 3:
                 tictactoe = TicTacToe(board_size=3, win_len=3)
-                aio = RLttt(policy_file="policy_o", toggle_train=True)
-                aix = RLttt(policy_file="policy_x", toggle_train=True)
+                aio = RLttt(policy_file="policy_o", train_prefix='vanilla')
+                aix = RLttt(policy_file="policy_x", train_prefix='vanilla')
                 _ = tictactoe.play(aio=aio, aix=aix, gui_on=True)
 
             elif choice == 4:
                 rl_ai_pos = self.rl_ai_position()
                 if rl_ai_pos == 1:
-                    aio = RLttt(policy_file="policy_o", toggle_train=True)
+                    aio = RLttt(policy_file="policy_o", train_prefix='vanilla')
                     aix = Human()
                 elif rl_ai_pos == 2:
                     aio = Human()
-                    aix = RLttt(policy_file="policy_x", toggle_train=True)
+                    aix = RLttt(policy_file="policy_x", train_prefix='vanilla')
                 tictactoe = TicTacToe(board_size=3, win_len=3)
                 _ = tictactoe.play(aio=aio, aix=aix, gui_on=True)
 
