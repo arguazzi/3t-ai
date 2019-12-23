@@ -149,6 +149,7 @@ class TicTacToe:
         if w == -2:
             self.printer("Game over, draw."+"\n", gui_on)
             self.give_reward(w)
+            return w
         else:
             if w == 1:
                 s = 'x'
@@ -156,16 +157,17 @@ class TicTacToe:
                 s = 'o'
             self.printer("Game over. The winner is " + s+"\n", gui_on)
             self.give_reward(w)
+            return w
 
     def give_reward(self, w):
         if w == 1:
-            self.aix.feed_reward(1)
-            self.aio.feed_reward(0)
+            self.aix.feed_reward(1.0)
+            self.aio.feed_reward(0.0)
         elif w == -1:
-            self.aio.feed_reward(1)
-            self.aix.feed_reward(0)
+            self.aio.feed_reward(1.0)
+            self.aix.feed_reward(0.0)
         else:
-            self.aio.feed_reward(0.1)
+            self.aio.feed_reward(0.3)
             self.aix.feed_reward(0.5)
 
 
@@ -275,6 +277,34 @@ class RLttt:
             fr.close()
         except IOError:
             print("File not available. Starting from the beginning.")
+
+
+class TRand:
+    def __init__(self):
+        self.player = None
+        self.pval = None
+        self.oval = None
+        self.win_len = None
+
+    def set_player(self, player, pval, oval, win_len):
+        self.player = player
+        self.pval = pval
+        self.oval = oval
+        self.win_len = win_len
+
+    def move(self, board, positions):
+        idx = np.random.choice(len(positions))
+        e = positions[idx]
+        return e
+
+    def feed_reward(self, reward):
+        pass
+
+    def add_state(self, state):
+        pass
+
+    def reset(self):
+        pass
 
 
 class tAtIt:
@@ -409,12 +439,14 @@ class Game:
             aio = None
             aix = None
             choice = self.intro()
+
             if choice == 1:
                 train_len = self.training_len()
                 tictactoe = TicTacToe(board_size=3, win_len=3)
                 aio = RLttt(policy_file="policy_o", toggle_train=True)
                 aix = RLttt(policy_file="policy_x", toggle_train=True)
                 tictactoe.train(aio=aio, aix=aix, turns=train_len)
+
             elif choice == 2:
                 rl_ai_pos = self.rl_ai_position()
                 if rl_ai_pos == 1:
@@ -424,12 +456,14 @@ class Game:
                     aio = tAtIt()
                     aix = RLttt(policy_file="policy_x", toggle_train=True)
                 tictactoe = TicTacToe(board_size=3, win_len=3)
-                tictactoe.play(aio=aio, aix=aix, gui_on=True)
+                _ = tictactoe.play(aio=aio, aix=aix, gui_on=True)
+
             elif choice == 3:
                 tictactoe = TicTacToe(board_size=3, win_len=3)
                 aio = RLttt(policy_file="policy_o", toggle_train=True)
                 aix = RLttt(policy_file="policy_x", toggle_train=True)
-                tictactoe.play(aio=aio, aix=aix, gui_on=True)
+                _ = tictactoe.play(aio=aio, aix=aix, gui_on=True)
+
             elif choice == 4:
                 rl_ai_pos = self.rl_ai_position()
                 if rl_ai_pos == 1:
@@ -439,12 +473,14 @@ class Game:
                     aio = Human()
                     aix = RLttt(policy_file="policy_x", toggle_train=True)
                 tictactoe = TicTacToe(board_size=3, win_len=3)
-                tictactoe.play(aio=aio, aix=aix, gui_on=True)
+                _ = tictactoe.play(aio=aio, aix=aix, gui_on=True)
+
             elif choice == 5:
                 tictactoe = TicTacToe(board_size=3, win_len=3)
                 aio = Human()
                 aix = Human()
-                tictactoe.play(aio=aio, aix=aix, gui_on=True)
+                _ = tictactoe.play(aio=aio, aix=aix, gui_on=True)
+
             elif choice == 6:
                 break
 
