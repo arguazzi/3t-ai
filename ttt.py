@@ -98,6 +98,8 @@ class TicTacToe:
     def train(self, aio, aix, turns):
         for i in range(turns):
             self.play(aio, aix, gui_on=False)
+        aio.save_policy(aio.train_prefix)
+        aix.save_policy(aix.train_prefix)
 
     def play(self, aio, aix, gui_on=True):
 
@@ -261,8 +263,6 @@ class RLttt:
                 self.states_value[st] = 0
                 self.states_value[st] += self.lr * (self.decay_gamma * reward - self.states_value[st])
                 reward = self.states_value[st]
-        if self.train_prefix is not None:
-            self.save_policy(self.train_prefix)
         self.reset_state()
 
     def save_policy(self, prefix):
