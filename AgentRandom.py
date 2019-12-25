@@ -4,7 +4,7 @@ import numpy as np
 
 class AgentRandom(Agent):
     def __init__(self):
-        super().__init__()
+        Agent.__init__(self)
 
     def move(self, board, positions):
         idx = np.random.choice(len(positions))

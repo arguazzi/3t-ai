@@ -8,7 +8,7 @@ class AgentBlockWin(Agent):
         Deterministic, one-move ahead player. Checks for wins or losses in the
         next move, and if none available chooses a random move.
         """
-        super().__init__()
+        Agent.__init__(self)
 
     def compute_entry(self, r, c):
         return (r * self.win_len) + c

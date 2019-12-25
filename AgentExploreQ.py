@@ -6,7 +6,7 @@ import pickle
 class AgentExploreQ(Agent):
 
     def __init__(self, policy_file=None, train_prefix=None, exp_rate=0.3, learning_rate=0.9, decay_gamma=0.95):
-        super().__init__()
+        Agent.__init__(self)
         self.states = []
         self.exp_rate = exp_rate
         self.lr = learning_rate
