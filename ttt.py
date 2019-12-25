@@ -237,28 +237,28 @@ class Game:
             elif choice == 2:
                 rl_ai_pos = self.rl_ai_position()
                 if rl_ai_pos == 1:
-                    aio = AgentExploreQ(policy_file="policy_o", train_prefix='vanilla')
+                    aio = AgentExploreQ(policy_file="policy_o", train_prefix=None, exp_rate=0.0)
                     aix = AgentBlockWin()
                 elif rl_ai_pos == 2:
                     aio = AgentBlockWin()
-                    aix = AgentExploreQ(policy_file="policy_x", train_prefix='vanilla')
+                    aix = AgentExploreQ(policy_file="policy_x", train_prefix=None, exp_rate=0.0)
                 tictactoe = TicTacToe(board_size=3, win_len=3)
                 _ = tictactoe.play(aio=aio, aix=aix, gui_on=True)
 
             elif choice == 3:
                 tictactoe = TicTacToe(board_size=3, win_len=3)
-                aio = AgentExploreQ(policy_file="policy_o", train_prefix='vanilla')
-                aix = AgentExploreQ(policy_file="policy_x", train_prefix='vanilla')
+                aio = AgentExploreQ(policy_file="policy_o", train_prefix=None)
+                aix = AgentExploreQ(policy_file="policy_x", train_prefix=None, exp_rate=0.0)
                 _ = tictactoe.play(aio=aio, aix=aix, gui_on=True)
 
             elif choice == 4:
                 rl_ai_pos = self.rl_ai_position()
                 if rl_ai_pos == 1:
-                    aio = AgentExploreQ(policy_file="policy_o", train_prefix='vanilla')
+                    aio = AgentExploreQ(policy_file="policy_o", train_prefix=None, exp_rate=0.0)
                     aix = AgentHuman()
                 elif rl_ai_pos == 2:
                     aio = AgentHuman()
-                    aix = AgentExploreQ(policy_file="policy_x", train_prefix='vanilla')
+                    aix = AgentExploreQ(policy_file="policy_x", train_prefix=None, exp_rate=0.0)
                 tictactoe = TicTacToe(board_size=3, win_len=3)
                 _ = tictactoe.play(aio=aio, aix=aix, gui_on=True)
 
