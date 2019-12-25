@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import pickle
+from AgentHuman import AgentHuman
+from AgentRandom import AgentRandom
+from AgentBlockWin import AgentBlockWin
+from AgentExploreQ import AgentExploreQ
 
 
 class TicTacToe:
@@ -98,8 +101,8 @@ class TicTacToe:
     def train(self, aio, aix, turns):
         for i in range(turns):
             self.play(aio, aix, gui_on=False)
-        aio.save_policy(aio.train_prefix)
-        aix.save_policy(aix.train_prefix)
+        aio.save_policy()
+        aix.save_policy()
 
     def play(self, aio, aix, gui_on=True):
 
@@ -169,225 +172,8 @@ class TicTacToe:
             self.aio.feed_reward(1.0)
             self.aix.feed_reward(0.0)
         else:
-            self.aio.feed_reward(0.3)
+            self.aio.feed_reward(0.5)
             self.aix.feed_reward(0.5)
-
-
-class Human:
-
-    def __init__(self):
-        self.player = None
-
-    def set_player(self, player, pval, oval, win_len):
-        self.player = player
-
-    def move(self, board, positions):
-        while True:
-            action = int(input("Input your move: "))
-            if action in positions:
-                return action
-            else:
-                print("Move not available.\n")
-
-    def feed_reward(self, reward):
-        pass
-
-    def add_state(self, state):
-        pass
-
-    def reset(self):
-        pass
-
-
-class RLttt:
-
-    def __init__(self, policy_file=None, train_prefix=None, exp_rate=0.3, learning_rate=0.2, decay_gamma=0.9):
-        self.player = None
-        self.pval = None
-        self.oval = None
-        self.states = []
-        self.exp_rate = exp_rate
-        self.lr = learning_rate
-        self.decay_gamma = decay_gamma
-        self.states_value = {}
-        self.train_prefix = train_prefix
-
-        if policy_file is not None:
-            self.load_policy(policy_file)
-
-    def set_player(self, player, pval, oval, win_len):
-        self.player = player
-        self.pval = pval
-        self.oval = oval
-        self.win_len = win_len
-
-    def add_state(self, state):
-        self.states.append(state)
-
-    def reset_state(self):
-        self.states = []
-
-    def get_hash(self, board):
-        boardHash = str(board.flatten())
-        return boardHash
-
-    def move(self, board, positions):
-        """
-        Choose whether to choose an action at random or from history based on
-        exploitation rate. Store the hash of the board state in a state-value
-        dictionary and choose the action that returns the maximum value of the
-        next state.
-        """
-        if np.random.uniform(0, 1) <= self.exp_rate:
-            # take random action
-            idx = np.random.choice(len(positions))
-            action = positions[idx]
-        else:
-            value_max = -np.inf
-            for p in positions:
-                next_board = board.copy().flatten()
-                next_board[p] = self.pval
-                next_boardHash = self.get_hash(next_board)
-                if self.states_value.get(next_boardHash) is None:
-                    value = 0
-                else:
-                    value = self.states_value.get(next_boardHash)
-                if value >= value_max:
-                    value_max = value
-                    action = p
-        return action
-
-    def feed_reward(self, reward):
-        for st in reversed(self.states):
-            if self.states_value.get(st) is None:
-                self.states_value[st] = 0
-                self.states_value[st] += self.lr * (self.decay_gamma * reward - self.states_value[st])
-                reward = self.states_value[st]
-        self.reset_state()
-
-    def save_policy(self, prefix):
-        name = 'policy_' + prefix + '_' + str(self.player)
-        fw = open(name, 'wb')
-        pickle.dump(self.states_value, fw)
-        fw.close()
-
-    def load_policy(self, filename):
-        try:
-            fr = open(filename, 'rb')
-            self.states_value = pickle.load(fr)
-            fr.close()
-        except IOError:
-            print("File not available. Starting from the beginning.")
-
-
-class TRand:
-    def __init__(self):
-        self.player = None
-        self.pval = None
-        self.oval = None
-        self.win_len = None
-
-    def set_player(self, player, pval, oval, win_len):
-        self.player = player
-        self.pval = pval
-        self.oval = oval
-        self.win_len = win_len
-
-    def move(self, board, positions):
-        idx = np.random.choice(len(positions))
-        e = positions[idx]
-        return e
-
-    def feed_reward(self, reward):
-        pass
-
-    def add_state(self, state):
-        pass
-
-    def reset(self):
-        pass
-
-
-class tAtIt:
-    def __init__(self):
-        """
-        Deterministic, one-move ahead player. Checks for wins or losses in the
-        next move, and if none available chooses a random move.
-        """
-        self.player = None
-        self.pval = None
-        self.oval = None
-        self.win_len = None
-
-    def set_player(self, player, pval, oval, win_len):
-        self.player = player
-        self.pval = pval
-        self.oval = oval
-        self.win_len = win_len
-
-    def compute_entry(self, r, c):
-        return (r * self.win_len) + c
-
-    def check_move(self, board, val):
-        """
-        Check for sum totals in the columns, rows, and diagonals. For a next-
-        move win, need to check for twice the value of the symbol (naught or
-        cross). Also note that if the winning length is smaller than the board
-        size, this is not performing an exhaustive search of the diagonals.
-        """
-        rsum = np.sum(board, 0)
-        csum = np.sum(board, 1)
-        diag = np.diag(board)
-        adiag = np.diag(np.flipud(board))
-        tsum = np.sum(diag)
-        asum = np.sum(adiag)
-
-        e = 0
-
-        if val in rsum:
-            cx = np.where(rsum == val)[0]
-            rx = np.where(board[:, cx].flatten() == 0)[0]
-            e = self.compute_entry(rx, cx)[0]
-
-        elif val in csum:
-            rx = np.where(csum == val)[0]
-            cx = np.where(board[rx, :].flatten() == 0)[0]
-            e = self.compute_entry(rx, cx)[0]
-
-        elif tsum == val:
-            dx = np.where(diag == 0)[0]
-            e = self.compute_entry(dx, dx)[0]
-
-        elif asum == val:
-            dy = np.where(adiag == 0)[0]
-            dx = len(board) - dy - 1
-            e = self.compute_entry(dx, dy)[0]
-
-        return e
-
-    def move(self, board, positions):
-        # Check for possible next-move wins - win by moving there
-        e = self.check_move(board, self.pval * (self.win_len - 1))
-
-        # Check for possible next-move losses - block by going there
-        if e == 0:
-            e = self.check_move(board, self.oval * (self.win_len - 1))
-
-        # Randomly select for next move
-        if e == 0:
-            idx = np.random.choice(len(positions))
-            e = positions[idx]
-
-        return e
-
-    def feed_reward(self, reward):
-        pass
-
-    def add_state(self, state):
-        pass
-
-    def reset(self):
-        pass
 
 
 class Game:
@@ -444,42 +230,42 @@ class Game:
             if choice == 1:
                 train_len = self.training_len()
                 tictactoe = TicTacToe(board_size=3, win_len=3)
-                aio = RLttt(policy_file="policy_o", train_prefix='vanilla')
-                aix = RLttt(policy_file="policy_x", train_prefix='vanilla')
+                aio = AgentExploreQ(policy_file="policy_o", train_prefix='vanilla')
+                aix = AgentExploreQ(policy_file="policy_x", train_prefix='vanilla')
                 tictactoe.train(aio=aio, aix=aix, turns=train_len)
 
             elif choice == 2:
                 rl_ai_pos = self.rl_ai_position()
                 if rl_ai_pos == 1:
-                    aio = RLttt(policy_file="policy_o", train_prefix='vanilla')
-                    aix = tAtIt()
+                    aio = AgentExploreQ(policy_file="policy_o", train_prefix='vanilla')
+                    aix = AgentBlockWin()
                 elif rl_ai_pos == 2:
-                    aio = tAtIt()
-                    aix = RLttt(policy_file="policy_x", train_prefix='vanilla')
+                    aio = AgentBlockWin()
+                    aix = AgentExploreQ(policy_file="policy_x", train_prefix='vanilla')
                 tictactoe = TicTacToe(board_size=3, win_len=3)
                 _ = tictactoe.play(aio=aio, aix=aix, gui_on=True)
 
             elif choice == 3:
                 tictactoe = TicTacToe(board_size=3, win_len=3)
-                aio = RLttt(policy_file="policy_o", train_prefix='vanilla')
-                aix = RLttt(policy_file="policy_x", train_prefix='vanilla')
+                aio = AgentExploreQ(policy_file="policy_o", train_prefix='vanilla')
+                aix = AgentExploreQ(policy_file="policy_x", train_prefix='vanilla')
                 _ = tictactoe.play(aio=aio, aix=aix, gui_on=True)
 
             elif choice == 4:
                 rl_ai_pos = self.rl_ai_position()
                 if rl_ai_pos == 1:
-                    aio = RLttt(policy_file="policy_o", train_prefix='vanilla')
-                    aix = Human()
+                    aio = AgentExploreQ(policy_file="policy_o", train_prefix='vanilla')
+                    aix = AgentHuman()
                 elif rl_ai_pos == 2:
-                    aio = Human()
-                    aix = RLttt(policy_file="policy_x", train_prefix='vanilla')
+                    aio = AgentHuman()
+                    aix = AgentExploreQ(policy_file="policy_x", train_prefix='vanilla')
                 tictactoe = TicTacToe(board_size=3, win_len=3)
                 _ = tictactoe.play(aio=aio, aix=aix, gui_on=True)
 
             elif choice == 5:
                 tictactoe = TicTacToe(board_size=3, win_len=3)
-                aio = Human()
-                aix = Human()
+                aio = AgentHuman()
+                aix = AgentHuman()
                 _ = tictactoe.play(aio=aio, aix=aix, gui_on=True)
 
             elif choice == 6:
